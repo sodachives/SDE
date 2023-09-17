@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitcoin Game Simulator</title>
+    <link rel="stylesheet" href="style2.css">
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+</head>
+<body>
+
+    <header>
+        <!-- Logo and Website Name in the top left corner -->
+        <div id="logo" style="display: flex; align-items: center;">
+            <img src="images/logo.png" alt="Website Logo" width="80" height="80">
+            <h1>Sand Dollar Exchange</h1>
+        </div>
+
+
+    <nav>
+        <!-- Navigation tabs -->
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="gametab.html">Game</a></li>
+        </ul>
+    </nav>
+    </header>
+
+
+    <div class="container">
+        <div class="top-buttons">
+            <button class="button">Bitcoin</button>
+            <button class="button">Ethereum</button>
+            <button class="button">Litecoin</button>
+        </div>
+        <div class="game-container">
+            <div class="about-coin">
+                <h2>About Coin</h2>
+                <p>Bitcoin is the first and most well-known cryptocurrency. It's often referred to as digital gold due to its store of value properties.</p>
+            </div>
+            <div class="balance-box"> <!-- # Added balance box div -->
+                <h2>Balance</h2>
+                <p><span id="balanceValue"></span></p> <!-- # Initial balance value -->
+            </div>
+            <div class="daily-tip">
+                <h2>Daily Tip</h2>
+                <p>Avoid FOMO (Fear of Missing Out): Don't chase after hype or quick gains.</p>
+            </div>
+            <div>
+                <input type="number" id="buym" placeholder ="Enter dollar amount">        
+                <button class="button" id="Buy">Buy</button>
+                <button class="button" id="Sell">Sell</button>
+            </div>
+        </div>
+    </div>
+    <div id="chart-container"></div>
+    <script>
+        let balance = 100000;
+        var buyamt = 100;
+        var sellamt = 100;
+        var bitcoin = 1000;
+        var ethereum = 10;
+        var litecoin = 10;
+        var bitcoinprice = 10;
+        var ethereumprice = 10;
+        var litecoinprice = 10;
+        var coin = "bitcoin";
+
+        document.getElementById("balanceValue").textContent = balance;
+        document.getElementById('Buy').addEventListener('click', function() {
+            coin = "bitcoin";
+            buy(coin, 10000);
+        });
+        document.getElementById('Sell').addEventListener('click', function() {
+            coin = "bitcoin";
+            sell(coin, 5000);
+        });
+
+        function buy(coin, buyamt) {
+            if (buyamt <= balance) {
+                if (coin == "bitcoin") {
+                    bitcoin += buyamt / bitcoinprice;
+                    balance -= buyamt;
+                }
+                if (coin == "ethereum") {
+                    ethereum += buyamt / ethereumprice;
+                    balance -= buyamt;
+                }
+                if (coin == "litecoin") {
+                    litecoin += buyamt / litecoinprice;
+                    balance -= buyamt;
+                }
+            }
+            else {
+                alert("Not enough money! Please enter an amount no larger than your balance.");
+            }
+            document.getElementById("balanceValue").textContent = balance;
+        }
+        function sell(coin, sellamt) {
+            if (coin == "bitcoin" && sellamt/bitcoinprice <= bitcoin) {
+                bitcoin -= sellamt / bitcoinprice;
+                balance += sellamt;
+            }
+            if (coin == "ethereum" && sellamt/bitcoinprice <= ethereum) {
+                ethereum -= sellamt / ethereumprice;
+                balance += sellamt;
+            }
+            if (coin == "litecoin" && sellamt/bitcoinprice <= litecoin) {
+                litecoin -= sellamt / litecoinprice;
+                balance += sellamt;
+            }
+            /*
+            else {
+                alert("Not enough crypto! Please enter a smaller amount.");
+            }
+            */
+            document.getElementById("balanceValue").textContent = balance;
+        }
+
+        let data = [];
+
+        // Set up chart dimensions
+        const width = 600; // Width of the chart
+        const height = 400; // Height of the chart
+        const margin = { top: 20, right: 30, bottom: 30, left: 40 }; // Margins
+
+        // Create an SVG container for the chart
+        const svg = d3.select("#chart-container")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        // Define scales for x and y axes
+        const xScale = d3.scaleTime()
+            .range([0, width]);
+
+        const yScale = d3.scaleLinear()
+            .range([height, 0]);
+
+        // Create x and y axes
+        const xAxis = d3.axisBottom(xScale);
+        const yAxis = d3.axisLeft(yScale);
+
+        // Append x and y axes to the chart
+        svg.append("g")
+            .attr("class", "x-axis")
+            .attr("transform", `translate(0,${height})`);
+
+        svg.append("g")
+            .attr("class", "y-axis");
+
+        // Create a line generator
+        const line = d3.line()
+            .x(d => xScale(d.date))
+            .y(d => yScale(d.price));
+
+        // Draw the initial empty line chart
+        svg.append("path")
+            .attr("class", "line")
+            .attr("d", line(data))
+            .attr("fill", "none") // Set fill to "none"
+            .attr("stroke", "blue"); // Set the line color (you can change "blue" to your desired color)
+
+        // Function to update the chart
+        function updateChart() {
+            // Simulate a new data point (replace with actual data retrieval logic)
+            const newDataPoint = { date: new Date(), price: Math.random() * 15000 + 15000 };
+
+            // Add the new data point to the end of the array
+            data.push(newDataPoint);
+
+            // Remove the oldest data point (from the beginning of the array)
+            if (data.length > 20) {
+                data.shift();
+            }
+
+            // Update x and y scales' domains based on the new data
+            xScale.domain(d3.extent(data, d => d.date));
+            yScale.domain([0, d3.max(data, d => d.price)]);
+
+            // Update existing elements (e.g., lines)
+            svg.select(".line")
+                .datum(data)
+                .attr("d", line);
+
+            // Update x-axis
+            svg.select(".x-axis")
+                .call(xAxis);
+
+            // Update y-axis
+            svg.select(".y-axis")
+                .call(yAxis);
+        }
+
+        // Call the updateChart function immediately to render the initial chart
+        updateChart();
+
+        // Update the chart every 1 second
+        setInterval(updateChart, 1000);
+    </script>
+</body>
+</html>
+
